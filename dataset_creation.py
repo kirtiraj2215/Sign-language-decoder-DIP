@@ -1,62 +1,36 @@
 import os
-import pickle
 import cv2
-import mediapipe as mp
+import numpy as np
+import pickle
 
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.9)
-
-data_dir = './asl_dataset'
-dataset = []
+dataset_path = 'asl_dataset'
+images = []
 labels = []
 
-def is_image_file(file_name):
-    image_extensions = ['.jpg', '.jpeg', '.png', '.bmp', '.tiff']
-    return any(file_name.lower().endswith(ext) for ext in image_extensions)
+label_map = {chr(i): i - 97 for i in range(97, 123)}
+label_map.update({str(i): i + 26 for i in range(10)})
 
-for directory in os.listdir(data_dir):
-    path = os.path.join(data_dir, directory)
+for folder_name in os.listdir(dataset_path):
+    folder_path = os.path.join(dataset_path, folder_name)
     
-    if not os.path.isdir(path):
-        continue
+    if os.path.isdir(folder_path):
+        label = label_map.get(folder_name)
+        
+        for image_name in os.listdir(folder_path):
+            image_path = os.path.join(folder_path, image_name)
+            
+            if image_name.lower().endswith(('.png', '.jpg', '.jpeg')):
+                image = cv2.imread(image_path)
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                image = cv2.resize(image, (64, 64))
+                
+                images.append(image)
+                labels.append(label)
 
-    for img_path in os.listdir(path):
-        if not is_image_file(img_path):
-            continue
+images = np.array(images)
+labels = np.array(labels)
 
-        normalized_landmarks = []
-        x_coordinates, y_coordinates = [], []
+with open('asl_dataset.pkl', 'wb') as f:
+    pickle.dump((images, labels), f)
 
-        image_path = os.path.join(path, img_path)
-        image = cv2.imread(image_path)
-
-        if image is None:
-            print(f"Warning: Unable to load image at path: {image_path}")
-            continue
-
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        processed_image = hands.process(image_rgb)
-        hand_landmarks = processed_image.multi_hand_landmarks
-
-        if hand_landmarks:
-            for hand_landmark in hand_landmarks:
-                landmark_coordinates = hand_landmark.landmark
-
-                for coordinates in landmark_coordinates:
-                    x_coordinates.append(coordinates.x)
-                    y_coordinates.append(coordinates.y)
-
-                min_x, min_y = min(x_coordinates), min(y_coordinates)
-
-                for coordinates in landmark_coordinates:
-                    normalized_x = coordinates.x - min_x
-                    normalized_y = coordinates.y - min_y
-                    normalized_landmarks.extend((normalized_x, normalized_y))
-
-            dataset.append(normalized_landmarks)
-            labels.append(directory)
-
-with open("./ASL.pickle", "wb") as f:
-    pickle.dump({"dataset": dataset, "labels": labels}, f)
-
-print("Dataset creation complete and saved as ASL.pickle")
+print("Dataset has been pickled successfully!")
