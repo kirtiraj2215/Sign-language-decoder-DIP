@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import accuracy_score
 from collections import Counter
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -35,19 +35,6 @@ score = accuracy_score(y_pred, y_test)
 
 print(f"Accuracy Score: {score * 100:.2f}%")
 
-# Generate and print the confusion matrix
-conf_matrix = confusion_matrix(y_test, y_pred)
-print("Confusion Matrix:")
-print(conf_matrix)
-
-# Plot the confusion matrix as a heatmap
-plt.figure(figsize=(12, 10))
-sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=label_encoder.classes_, yticklabels=label_encoder.classes_)
-plt.xlabel("Predicted Labels")
-plt.ylabel("True Labels")
-plt.title("Confusion Matrix Heatmap")
-plt.show()
-
 #Saving the trained model in ASL_model.p
 with open("./ASL_model.p", "wb") as f:
-    pickle.dump({"model": model, "target": y_test}, f)
+    pickle.dump({"model": model}, f)
